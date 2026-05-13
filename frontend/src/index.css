@@ -2,22 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── CSS custom properties ──────────────────────────────────── */
+:root {
+  --bg-base:          #0F0F12;
+  --bg-card:          #1A1A22;
+  --bg-card-hover:    #1F1F2A;
+  --bg-elevated:      #24242E;
+  --maroon:           #7B1E3A;
+  --maroon-light:     #A63A50;
+  --border:           rgba(255,255,255,0.08);
+  --border-hover:     rgba(255,255,255,0.14);
+  --text-primary:     #F5F5F5;
+  --text-secondary:   #B8B8C0;
+  --text-muted:       #6B6B78;
+}
+
+/* ── Global base ────────────────────────────────────────────── */
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 
   body {
-    @apply antialiased text-slate-900 bg-slate-50;
+    @apply antialiased;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Themed selection highlight */
+  ::selection {
+    background-color: rgba(123,30,58,0.35);
+    color: #F5F5F5;
   }
 }
 
+/* ── Scrollbar (webkit) ─────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: var(--bg-base); }
+::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.12) var(--bg-base); }
+
+/* ── Focus ring ─────────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid rgba(123,30,58,0.7);
+  outline-offset: 2px;
+}
+
+/* ── Themed form controls ───────────────────────────────────── */
+input, select, textarea {
+  color-scheme: dark;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--maroon);
+  box-shadow: 0 0 0 3px rgba(123,30,58,0.20);
+}
+
+/* ── Glassmorphism card variant ─────────────────────────────── */
+@layer components {
+  .glass-card {
+    background: rgba(26,26,34,0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* Shimmer loading skeleton */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--bg-card) 25%,
+      rgba(255,255,255,0.04) 50%,
+      var(--bg-card) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  /* Animated dashed border for drop zone drag state */
+  .border-march {
+    background-image:
+      repeating-linear-gradient(90deg, var(--maroon) 0, var(--maroon) 6px, transparent 6px, transparent 14px),
+      repeating-linear-gradient(180deg, var(--maroon) 0, var(--maroon) 6px, transparent 6px, transparent 14px),
+      repeating-linear-gradient(90deg, var(--maroon) 0, var(--maroon) 6px, transparent 6px, transparent 14px),
+      repeating-linear-gradient(180deg, var(--maroon) 0, var(--maroon) 6px, transparent 6px, transparent 14px);
+    background-size: 20px 2px, 2px 20px, 20px 2px, 2px 20px;
+    background-position: 0 0, 100% 0, 0 100%, 0 0;
+    background-repeat: repeat-x, repeat-y, repeat-x, repeat-y;
+    border: none !important;
+    border-radius: 1rem;
+  }
+}
+
+/* ── Utility: hide scrollbar ────────────────────────────────── */
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
 }

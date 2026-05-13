@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import Badge from '../ui/Badge';
 
 function getColor(score) {
-  if (score >= 80) return { stroke: '#10b981', badge: 'green', label: 'Excellent' };
-  if (score >= 60) return { stroke: '#f59e0b', badge: 'amber', label: 'Moderate' };
-  return { stroke: '#ef4444', badge: 'red', label: 'Poor' };
+  if (score >= 80) return { stroke: '#2E8B57', badge: 'success', label: 'Excellent' };
+  if (score >= 60) return { stroke: '#D4A017', badge: 'warning', label: 'Moderate' };
+  return { stroke: '#C0392B', badge: 'danger', label: 'Poor' };
 }
 
 export default function QualityGauge({ score = 0, passed = false }) {
@@ -16,14 +16,12 @@ export default function QualityGauge({ score = 0, passed = false }) {
   const { stroke, badge, label } = getColor(score);
   const offset = circumference - (animated / 100) * circumference;
 
-  // Animate on mount
   useEffect(() => {
     const start = performance.now();
     const duration = 1200;
     const tick = (now) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setAnimated(eased * score);
       if (progress < 1) rafRef.current = requestAnimationFrame(tick);
@@ -39,7 +37,7 @@ export default function QualityGauge({ score = 0, passed = false }) {
           {/* Track */}
           <circle
             cx="90" cy="90" r={radius}
-            fill="none" stroke="#e2e8f0" strokeWidth="14"
+            fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="14"
           />
           {/* Progress */}
           <circle
@@ -48,20 +46,20 @@ export default function QualityGauge({ score = 0, passed = false }) {
             strokeDasharray={circumference}
             strokeDashoffset={offset}
             strokeLinecap="round"
+            style={{ filter: `drop-shadow(0 0 8px ${stroke}66)` }}
           />
         </svg>
-        {/* Center text */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center rotate-0">
-          <span className="text-4xl font-extrabold text-slate-900 leading-none">
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-4xl font-extrabold text-ink leading-none">
             {animated.toFixed(1)}
           </span>
-          <span className="text-xs text-slate-400 font-medium mt-0.5">/ 100</span>
+          <span className="text-xs text-ink-muted font-medium mt-0.5">/ 100</span>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
         <Badge color={badge}>{label}</Badge>
-        <Badge color={passed ? 'green' : 'red'}>
+        <Badge color={passed ? 'success' : 'danger'}>
           {passed ? '✓ Passed' : '✗ Failed'}
         </Badge>
       </div>

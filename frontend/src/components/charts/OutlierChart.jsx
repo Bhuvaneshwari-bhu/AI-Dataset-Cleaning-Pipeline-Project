@@ -3,12 +3,14 @@ import {
 } from 'recharts';
 import EmptyState from '../ui/EmptyState';
 
+const MAROON_PALETTE = ['#7B1E3A', '#A63A50', '#C0507D', '#D4789A', '#9B2F5A', '#B84870', '#CB6088', '#E8A0B8'];
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3 text-sm">
-      <p className="font-semibold text-slate-800">{label}</p>
-      <p className="text-orange-600 mt-1">
+    <div className="bg-card-elevated border border-white/[0.12] rounded-xl shadow-card px-4 py-3 text-sm">
+      <p className="font-semibold text-ink">{label}</p>
+      <p className="text-warning mt-1">
         {payload[0].value} outliers ({payload[0].payload.pct?.toFixed(2)}%)
       </p>
     </div>
@@ -34,23 +36,23 @@ export default function OutlierChart({ outlierSummary = {} }) {
   return (
     <ResponsiveContainer width="100%" height={220}>
       <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
         <XAxis
           dataKey="col"
-          tick={{ fontSize: 12, fill: '#64748b' }}
+          tick={{ fontSize: 12, fill: '#6B6B78' }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 12, fill: '#64748b' }}
+          tick={{ fontSize: 12, fill: '#6B6B78' }}
           axisLine={false}
           tickLine={false}
           allowDecimals={false}
         />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: '#fff7ed' }} />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
         <Bar dataKey="count" radius={[6, 6, 0, 0]}>
           {data.map((_, i) => (
-            <Cell key={i} fill={`hsl(${25 + i * 8}, 85%, ${55 + i * 2}%)`} />
+            <Cell key={i} fill={MAROON_PALETTE[i % MAROON_PALETTE.length]} />
           ))}
         </Bar>
       </BarChart>

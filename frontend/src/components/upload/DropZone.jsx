@@ -60,15 +60,15 @@ export default function DropZone({ onFileSelect, disabled = false }) {
   };
 
   const zoneClass = [
-    'relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-200 select-none',
+    'relative rounded-2xl p-12 text-center transition-all duration-200 select-none',
     disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
     dragging
-      ? 'border-indigo-500 bg-indigo-50 scale-[1.01]'
+      ? 'border-march scale-[1.01] bg-maroon-600/10'
       : selected
-        ? 'border-emerald-400 bg-emerald-50 cursor-default'
+        ? 'border-2 border-dashed border-success/40 bg-success/5 cursor-default'
         : error
-          ? 'border-red-400 bg-red-50'
-          : 'border-slate-300 bg-white hover:border-indigo-400 hover:bg-indigo-50/40',
+          ? 'border-2 border-dashed border-danger/40 bg-danger/5'
+          : 'border-2 border-dashed border-white/[0.14] bg-card/50 hover:border-maroon-600/50 hover:bg-maroon-600/5',
   ].join(' ');
 
   return (
@@ -95,10 +95,14 @@ export default function DropZone({ onFileSelect, disabled = false }) {
       {!selected ? (
         <div className="flex flex-col items-center gap-3">
           <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
-            error ? 'bg-red-100' : dragging ? 'bg-indigo-100' : 'bg-slate-100'
+            error
+              ? 'bg-danger/10 border border-danger/20'
+              : dragging
+                ? 'bg-maroon-600/20 border border-maroon-600/30'
+                : 'bg-white/[0.06] border border-white/[0.10]'
           }`}>
             <svg
-              className={`w-8 h-8 ${error ? 'text-red-500' : dragging ? 'text-indigo-500' : 'text-slate-400'}`}
+              className={`w-8 h-8 ${error ? 'text-red-400' : dragging ? 'text-maroon-400' : 'text-ink-muted'}`}
               fill="none" viewBox="0 0 24 24" stroke="currentColor"
             >
               {error ? (
@@ -113,38 +117,38 @@ export default function DropZone({ onFileSelect, disabled = false }) {
 
           {error ? (
             <div>
-              <p className="text-red-600 font-semibold">{error}</p>
-              <p className="text-sm text-red-500 mt-1">Click to try a different file</p>
+              <p className="text-red-400 font-semibold">{error}</p>
+              <p className="text-sm text-red-400/70 mt-1">Click to try a different file</p>
             </div>
           ) : (
             <div>
-              <p className="text-slate-700 font-semibold text-lg">
+              <p className="text-ink font-semibold text-lg">
                 {dragging ? 'Drop it here!' : 'Drag & drop your CSV file'}
               </p>
-              <p className="text-slate-500 mt-1 text-sm">
-                or <span className="text-indigo-600 font-semibold">click to browse</span>
+              <p className="text-ink-muted mt-1 text-sm">
+                or <span className="text-maroon-400 font-semibold">click to browse</span>
               </p>
-              <p className="text-slate-400 text-xs mt-3">Supported: .csv · Max 100 MB</p>
+              <p className="text-ink-muted/60 text-xs mt-3">Supported: .csv · Max 100 MB</p>
             </div>
           )}
         </div>
       ) : (
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-12 h-12 bg-success/10 border border-success/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg className="w-6 h-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="text-left min-w-0">
-              <p className="font-semibold text-slate-800 truncate">{selected.name}</p>
-              <p className="text-sm text-slate-500">{fmt(selected.size)}</p>
+              <p className="font-semibold text-ink truncate">{selected.name}</p>
+              <p className="text-sm text-ink-muted">{fmt(selected.size)}</p>
             </div>
           </div>
           {!disabled && (
             <button
               onClick={clear}
-              className="flex-shrink-0 p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+              className="flex-shrink-0 p-2 rounded-xl text-ink-muted hover:text-red-400 hover:bg-danger/10 transition-colors"
               aria-label="Remove file"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
