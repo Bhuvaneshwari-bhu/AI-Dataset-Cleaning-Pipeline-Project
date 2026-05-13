@@ -12,6 +12,13 @@ Add this project in your resume like this:
 * Added CI/CD workflow with GitHub Actions, linting, logging, and warning-safe compatibility for modern Pandas and Seaborn versions.
 * Generated interactive HTML/PDF reports with data quality insights, anomaly summaries, and visualization dashboards.
 
+AI Dataset Cleaning & Validation Pipeline
+
+Built a full-stack data quality pipeline to validate, clean, and analyze raw CSV datasets
+Implemented automated missing value handling, duplicate removal, and outlier detection (IQR/Z-score)
+Designed a rule-based validation engine with schema checks and data profiling
+Generated interactive HTML and PDF reports with dataset quality scoring (0–100)
+Deployed REST API (FastAPI) backend and React-based frontend dashboard on cloud platforms
 ---
 
 ### AI Dataset Cleaning & Validation Pipeline
