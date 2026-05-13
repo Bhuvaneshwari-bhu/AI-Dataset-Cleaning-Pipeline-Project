@@ -14,10 +14,12 @@ A production-grade, modular data quality system for cleaning, validating, and pr
 
 - [Overview](#overview)
 - [Features](#features)
+- [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Pipeline Stages](#pipeline-stages)
 - [Project Structure](#project-structure)
 - [Installation](#installation)
+- [Running the Application](#running-the-application)
 - [Usage](#usage)
   - [Zero-configuration quickstart](#zero-configuration-quickstart)
   - [CLI reference](#cli-reference)
@@ -90,6 +92,37 @@ Every stage returns structured results (dataclasses, not print statements), maki
 
 ---
 
+## Tech Stack
+
+### Backend
+
+| Component | Technology | Purpose |
+|---|---|---|
+| Language | Python 3.11+ | Core runtime |
+| API framework | FastAPI | REST endpoints, OpenAPI docs, dependency injection |
+| Data | Pandas + NumPy | DataFrame operations, column profiling |
+| Statistics | SciPy | Kolmogorov–Smirnov drift test |
+| Visualisation | Matplotlib + Seaborn | Distribution histograms, chart generation |
+| Schema validation | Pydantic v2 | Request/response model enforcement |
+| ASGI server | Uvicorn | Production-grade server with hot-reload |
+| Linting | Ruff | Fast linter — E, F, I, B, UP rule sets |
+| Type checking | mypy | Static analysis with `--strict` |
+| Testing | pytest + pytest-cov | Unit + integration tests, line-level coverage |
+
+### Frontend
+
+| Component | Technology | Purpose |
+|---|---|---|
+| UI framework | React 18 | Component-based interface |
+| Build tool | Vite 5 | Dev server with HMR, optimised production bundles |
+| Styling | Tailwind CSS 3 | Utility-first CSS — no custom stylesheets |
+| Routing | React Router v6 | Client-side navigation (`/`, `/upload`, `/dashboard/:id`) |
+| HTTP client | Axios | API requests with request/response interceptors |
+| Charts | Recharts | Quality gauge, missing-value and outlier bar charts |
+| State | React hooks | `useState`, `useEffect`, `useCallback`, custom hooks |
+
+---
+
 ## Architecture
 
 ```
@@ -158,15 +191,37 @@ ai-dataset-pipeline/
 │   └── schema.yaml              # Column validation rules (YAML)
 ├── data/
 │   └── sample_dataset.csv       # Auto-generated sample (200 rows)
-├── output/                      # Created at runtime
+├── frontend/                    # React + Vite dashboard
+│   ├── src/
+│   │   ├── components/          # UI primitives, charts, dashboard, upload
+│   │   │   ├── charts/          # QualityGauge · MissingValuesChart · OutlierChart
+│   │   │   ├── dashboard/       # OverviewCards · ProfilesTable · CleaningLog · ReportActions
+│   │   │   ├── layout/          # Navbar (live API badge) · Footer
+│   │   │   ├── ui/              # Button · Card · Badge · Spinner · ProgressBar · EmptyState · ErrorBoundary
+│   │   │   └── upload/          # DropZone (drag-and-drop with validation)
+│   │   ├── context/             # ToastContext — notification system
+│   │   ├── hooks/               # useUpload · useAnalysis · useToast
+│   │   ├── layouts/             # MainLayout (Navbar + Footer + Outlet)
+│   │   ├── pages/               # LandingPage · UploadPage · DashboardPage · NotFoundPage
+│   │   ├── services/api.js      # Axios layer — all API calls in one place
+│   │   └── App.jsx              # BrowserRouter + route definitions
+│   ├── .env.example             # Copy to .env before running
+│   ├── package.json
+│   ├── tailwind.config.js
+│   └── vite.config.js
+├── output/                      # Created at runtime (CLI mode)
 │   ├── clean_dataset.csv
 │   └── invalid_rows.csv
-├── reports/                     # Created at runtime
+├── reports/                     # Created at runtime (CLI mode)
 │   ├── report.html
-│   ├── missing_values.png
 │   └── dist_*.png
 ├── src/
-│   ├── main.py
+│   ├── main.py                  # CLI entry point (argparse)
+│   ├── main_api.py              # FastAPI application entry point
+│   ├── api/
+│   │   ├── routes/              # Endpoint handlers: health · upload · analyze · report · download
+│   │   ├── schemas/             # Pydantic request/response models
+│   │   └── services/            # Pipeline orchestration + StorageManager
 │   ├── loader.py
 │   ├── validator.py
 │   ├── cleaner.py
@@ -174,6 +229,10 @@ ai-dataset-pipeline/
 │   ├── drift_detector.py
 │   ├── report_generator.py
 │   └── logger.py
+├── storage/                     # Created at runtime (API mode)
+│   ├── uploads/                 # Raw uploaded CSVs
+│   ├── cleaned/                 # Cleaned output CSVs
+│   └── reports/                 # Per-upload HTML reports + chart images
 ├── tests/
 │   ├── conftest.py              # Shared fixtures (clean_df, dirty_df)
 │   ├── test_loader.py
@@ -181,7 +240,8 @@ ai-dataset-pipeline/
 │   ├── test_cleaner.py
 │   ├── test_anomaly_detector.py
 │   ├── test_drift_detector.py
-│   └── test_report_generator.py
+│   ├── test_report_generator.py
+│   └── test_api.py              # FastAPI integration tests (TestClient)
 ├── .coveragerc
 ├── mypy.ini
 ├── pytest.ini
@@ -194,36 +254,188 @@ ai-dataset-pipeline/
 
 ## Installation
 
-**Requirements:** Python 3.11 or later.
+> **Prerequisites** — verify each tool is installed before continuing.
+>
+> | Tool | Minimum version | How to check |
+> |---|---|---|
+> | Python | 3.11 | `python3 --version` |
+> | pip | latest | `pip --version` |
+> | Node.js | 18 | `node --version` |
+> | npm | 8 | `npm --version` |
+> | Git | any | `git --version` |
+
+### Step 1 — Clone the repository
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/your-org/ai-dataset-pipeline.git
 cd ai-dataset-pipeline
+```
 
-# 2. Create and activate a virtual environment
+### Step 2 — Backend (Python + FastAPI)
+
+```bash
+# Create an isolated virtual environment
 python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
-# 3. Install runtime dependencies
+# Activate it
+source .venv/bin/activate          # macOS / Linux
+# .venv\Scripts\activate           # Windows PowerShell
+
+# Confirm the right Python is active (should print 3.11.x or later)
+python --version
+
+# Install runtime dependencies (FastAPI, pandas, scipy, etc.)
 pip install -r requirements.txt
 
-# 4. (Optional) Install development dependencies for testing and linting
+# Install dev tools — required for running tests, linting, and type checks
 pip install -r requirements-dev.txt
 ```
 
-**Runtime dependencies** (`requirements.txt`):
+> **Tip:** If you see `pip: command not found`, use `pip3` instead.
 
-| Package | Purpose |
-|---------|---------|
-| `pandas` | DataFrame operations throughout the pipeline |
-| `numpy` | Numeric computations in anomaly and drift detection |
-| `matplotlib` | Distribution histogram generation |
-| `seaborn` | Missing-value bar chart |
-| `scikit-learn` | Reserved for future ML-based anomaly detection |
-| `pyyaml` | YAML schema loading |
-| `scipy` | Kolmogorov–Smirnov test in drift detection |
-| `weasyprint` | Optional PDF report export |
+### Step 3 — Frontend (React + Vite)
+
+```bash
+cd frontend
+
+# Copy the environment template
+# This file sets VITE_API_BASE_URL=http://127.0.0.1:8000
+cp .env.example .env
+
+# Install Node dependencies (takes ~30 seconds on a fresh clone)
+npm install
+
+# Return to the project root
+cd ..
+```
+
+> **Note:** Never commit your `.env` file. It is already in `.gitignore`.
+
+---
+
+## Running the Application
+
+You need **two terminal windows** open at the same time — one for the backend, one for the frontend.
+
+---
+
+### Terminal 1 — FastAPI backend
+
+```bash
+# Activate the virtual environment first (required in every new terminal session)
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+
+# Start the API server with auto-reload on file changes
+cd src
+uvicorn main_api:app --reload --host 127.0.0.1 --port 8000
+```
+
+The server is ready when the terminal prints:
+
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Application startup complete.
+```
+
+**Useful URLs once the backend is running:**
+
+| URL | What it does |
+|---|---|
+| `http://127.0.0.1:8000/health` | Health check — returns `{"status":"ok","version":"1.0.0"}` |
+| `http://127.0.0.1:8000/docs` | **Swagger UI** — explore and call every endpoint interactively |
+| `http://127.0.0.1:8000/redoc` | ReDoc — clean API reference with full request/response schemas |
+
+---
+
+### Terminal 2 — React frontend
+
+```bash
+# Open a second terminal and navigate to the frontend folder
+cd frontend
+npm run dev
+# Vite prints: ➜  Local: http://localhost:3000/
+```
+
+Open **`http://localhost:3000`** in your browser.
+
+> The Navbar displays a green **API Online** badge when the frontend can reach the backend.
+> A red **API Offline** badge means the backend is not running — start Terminal 1 first.
+
+---
+
+### Example workflow
+
+```
+  1. Open http://localhost:3000
+         │
+         ▼
+  2. Click "Analyse Your Dataset" → /upload page
+         │
+         ▼
+  3. Drag & drop a .csv file onto the drop zone (or click to browse)
+         │
+         ▼
+  4. Choose pipeline options:
+         ├── Anomaly Method   →  IQR  or  Z-Score
+         ├── Fill Strategy    →  Median / Mean / Mode / Drop Row
+         └── Threshold        →  default 1.5
+         │
+         ▼
+  5. Click "Analyse Dataset →"
+         │
+         ├── Upload progress bar (POST /upload)
+         └── Analysis spinner  (POST /analyze/{upload_id})
+                   │
+                   ▼
+  6. Dashboard loads automatically with:
+         ├── Quality Score gauge (0–100, green / amber / red)
+         ├── Overview cards  (raw rows, clean rows, duplicates, outliers, missing)
+         ├── Missing Values chart + Outlier chart  (Recharts)
+         ├── Column Profiles table  (paginated, sortable)
+         └── Cleaning Log + Schema / Format / Type violation panels
+                   │
+                   ├──►  "Open Full Report"      → HTML report in new tab
+                   └──►  "Download Cleaned CSV"  → saves cleaned file locally
+```
+
+---
+
+### Running tests
+
+```bash
+# Activate the virtual environment first
+source .venv/bin/activate
+
+# Run the full test suite (141 tests)
+pytest
+
+# Run with per-line coverage report
+pytest --cov=src --cov-report=term-missing
+
+# Run a specific test file
+pytest tests/test_validator.py -v
+
+# Run tests matching a keyword
+pytest -k "zscore" -v
+
+# Run only the API integration tests
+pytest tests/test_api.py -v
+```
+
+---
+
+### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `ModuleNotFoundError: No module named 'fastapi'` | Virtual env not active or install was skipped | `source .venv/bin/activate && pip install -r requirements.txt` |
+| `uvicorn: command not found` | Uvicorn not installed | `pip install "uvicorn[standard]"` |
+| Navbar shows **API Offline** (red) | Backend not running or port mismatch | Start Terminal 1; verify `VITE_API_BASE_URL` in `frontend/.env` |
+| CORS error in browser console | `ALLOWED_ORIGINS` env var mismatch | For local dev, leave `ALLOWED_ORIGINS` unset — it defaults to `*` |
+| `npm run dev` fails | `node_modules` not installed | `cd frontend && npm install` |
+| `422 Unprocessable Content` on upload | File is not `.csv` or is empty | Use a valid CSV file with at least one header row and one data row |
+| Charts missing in the HTML report | `storage/` directory not writable | The folder is auto-created on first run; check filesystem permissions |
+| PDF export errors | `weasyprint` system libraries missing | PDF export is optional — see the [weasyprint install guide](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html) |
 
 ---
 
