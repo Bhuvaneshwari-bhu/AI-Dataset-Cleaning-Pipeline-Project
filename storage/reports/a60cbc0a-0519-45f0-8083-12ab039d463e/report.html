@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Dataset Cleaning & Validation Report</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body   { font-family: "Segoe UI", Arial, sans-serif; margin: 40px; color: #222; background: #f9f9f9; }
+    h1     { color: #1a237e; margin-bottom: 4px; }
+    h2     { color: #283593; border-bottom: 2px solid #e8eaf6; padding-bottom: 6px; margin-top: 36px; }
+    h3     { color: #3949ab; }
+    table  { border-collapse: collapse; width: 100%; margin-bottom: 20px; background: #fff; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; font-size: .9em; }
+    th     { background: #e8eaf6; font-weight: 600; }
+    tr:nth-child(even) { background: #f5f5f5; }
+    ul     { line-height: 1.9; }
+    code   { background: #efefef; padding: 1px 5px; border-radius: 3px; font-size: .85em; }
+    .meta  { color: #777; font-size: .85em; margin-bottom: 24px; }
+    .card  { background: #fff; border-radius: 8px; padding: 18px 24px;
+              box-shadow: 0 1px 4px rgba(0,0,0,.1); min-width: 140px; }
+    .charts img { margin: 8px; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  </style>
+</head>
+<body>
+  <h1>AI Dataset Cleaning & Validation Report</h1>
+  <p class="meta">Generated: 2026-05-13 22:05:48 &nbsp;|&nbsp;
+     Validation: <span style="background:#c62828;color:#fff;padding:3px 12px;border-radius:4px;font-size:.85em;font-weight:bold">✗ FAILED</span></p>
+
+  
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:30px">
+          <div class="card" style="border-left:6px solid #2e7d32">
+            <div style="font-size:3em;font-weight:bold;color:#2e7d32">97.0</div>
+            <div style="color:#555;font-size:.9em">Quality Score / 100</div>
+          </div>
+          <div class="card">
+            <div style="font-size:2em;font-weight:bold">205</div>
+            <div style="color:#555;font-size:.9em">Raw Rows</div>
+          </div>
+          <div class="card">
+            <div style="font-size:2em;font-weight:bold">200</div>
+            <div style="color:#555;font-size:.9em">Clean Rows</div>
+          </div>
+          <div class="card">
+            <div style="font-size:2em;font-weight:bold;color:#c62828">6</div>
+            <div style="color:#555;font-size:.9em">Issue Types Found</div>
+          </div>
+          <div class="card">
+            <div style="font-size:2em;font-weight:bold;color:#c62828">2</div>
+            <div style="color:#555;font-size:.9em">Invalid Rows (1.0%)</div>
+          </div>
+        </div>
+
+  <h2>1. Dataset Overview</h2>
+  <table>
+    <tr><th>Metric</th><th>Raw</th><th>After Cleaning</th></tr>
+    <tr><td>Rows</td><td>205</td><td>200</td></tr>
+    <tr><td>Columns</td><td>6</td><td>6</td></tr>
+    <tr><td>Duplicate rows</td><td>5</td><td>0</td></tr>
+    <tr><td>Invalid rows</td><td>2 (1.0%)</td><td>—</td></tr>
+  </table>
+
+  <h2>2. Missing Values <span style="background:#c62828;color:#fff;padding:3px 12px;border-radius:4px;font-size:.85em;font-weight:bold">✗ FAILED</span></h2>
+  <table>
+    <tr><th>Column</th><th>Missing Count</th><th>Missing %</th></tr>
+    <tr><td>age</td><td>16</td><td>7.8%</td></tr><tr><td>income</td><td>16</td><td>7.8%</td></tr><tr><td>score</td><td>17</td><td>8.29%</td></tr><tr><td>category</td><td>56</td><td>27.32%</td></tr>
+  </table>
+  
+  <img src="/home/user/AI1/storage/reports/a60cbc0a-0519-45f0-8083-12ab039d463e/missing_values.png" style="max-width:600px;margin-top:12px">
+
+  <h2>3. Column Profiles</h2>
+  <table>
+    <tr><th>Column</th><th>Dtype</th><th>Null Count (%)</th>
+        <th>Unique</th><th>Min / Max / Mean / Median</th></tr>
+    <tr><td>id</td><td>int64</td><td style='color:#2e7d32'>0 (0.0%)</td><td>200</td><td>1 / 200 / 98.1 / 98</td></tr><tr><td>age</td><td>float64</td><td style='color:#e65100'>16 (7.8%)</td><td>55</td><td>18 / 130 / 46.8 / 46</td></tr><tr><td>income</td><td>float64</td><td style='color:#e65100'>16 (7.8%)</td><td>184</td><td>1.78e+04 / 1e+06 / 5.97e+04 / 4.82e+04</td></tr><tr><td>score</td><td>float64</td><td style='color:#e65100'>17 (8.29%)</td><td>164</td><td>0.5 / 99.9 / 51.1 / 52.8</td></tr><tr><td>category</td><td>object</td><td style='color:#c62828'>56 (27.32%)</td><td>3</td><td>—</td></tr><tr><td>region</td><td>object</td><td style='color:#2e7d32'>0 (0.0%)</td><td>4</td><td>—</td></tr>
+  </table>
+
+  <h2>4. Schema Violations <span style="background:#2e7d32;color:#fff;padding:3px 12px;border-radius:4px;font-size:.85em;font-weight:bold">✓ PASSED</span></h2><p>No schema violations detected.</p>
+
+  <h2>5. Format Violations <span style="background:#2e7d32;color:#fff;padding:3px 12px;border-radius:4px;font-size:.85em;font-weight:bold">✓ PASSED</span></h2><p>All format checks passed.</p>
+
+  
+            <h2>6. Range Violations <span style="background:#c62828;color:#fff;padding:3px 12px;border-radius:4px;font-size:.85em;font-weight:bold">✗ FAILED</span></h2>
+            <table>
+              <tr><th>Column</th><th>Violations</th><th>Actual Range</th><th>Expected Range</th></tr>
+              <tr><td>age</td><td>2</td><td>18 – 130</td><td>0 – 120</td></tr>
+            </table>
+
+  <h2>7. Cleaning Log</h2>
+  <ul><li>Standardized column names to snake_case.</li><li>Stripped whitespace from 2 string column(s).</li><li>Removed 5 duplicate row(s).</li><li>Filled 16 NaN(s) in 'age' with median (46).</li><li>Filled 16 NaN(s) in 'income' with median (4.833e+04).</li><li>Filled 16 NaN(s) in 'score' with median (54.2).</li><li>Filled 53 NaN(s) in categorical 'category' with mode ('C').</li></ul>
+
+  <h2>8. Anomaly Detection (IQR)</h2>
+  <table>
+    <tr><th>Column</th><th>Outlier Count</th><th>Outlier %</th></tr>
+    <tr><td>age</td><td>1</td><td>0.5%</td></tr><tr><td>income</td><td>8</td><td>4.0%</td></tr>
+  </table>
+
+  
+
+  <h2>9. Distributions (Clean Data)</h2>
+  <div class="charts"><img src="/home/user/AI1/storage/reports/a60cbc0a-0519-45f0-8083-12ab039d463e/dist_id.png" style="max-width:400px;margin:8px"><img src="/home/user/AI1/storage/reports/a60cbc0a-0519-45f0-8083-12ab039d463e/dist_age.png" style="max-width:400px;margin:8px"><img src="/home/user/AI1/storage/reports/a60cbc0a-0519-45f0-8083-12ab039d463e/dist_income.png" style="max-width:400px;margin:8px"><img src="/home/user/AI1/storage/reports/a60cbc0a-0519-45f0-8083-12ab039d463e/dist_score.png" style="max-width:400px;margin:8px"></div>
+</body>
+</html>

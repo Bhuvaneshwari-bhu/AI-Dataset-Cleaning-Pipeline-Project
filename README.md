@@ -611,6 +611,74 @@ pytest --cov=src --cov-report=term-missing
 ![Report](assets/report_dashboard4.png)
 ---
 
+## React Frontend
+
+A production-grade React + Vite frontend ships in `frontend/`. It connects to the FastAPI backend via `VITE_API_BASE_URL` and supports drag-and-drop upload, live progress, an interactive analysis dashboard, Recharts visualizations, and toast notifications.
+
+### Running frontend + backend together
+
+**Terminal 1 — FastAPI backend**
+
+```bash
+# from project root
+pip install -r requirements.txt
+cd src
+uvicorn main_api:app --reload --host 127.0.0.1 --port 8000
+```
+
+**Terminal 2 — React dev server**
+
+```bash
+cd frontend
+cp .env.example .env        # VITE_API_BASE_URL=http://127.0.0.1:8000
+npm install
+npm run dev                  # → http://localhost:3000
+```
+
+Open `http://localhost:3000`. The Navbar shows **API Online** (green pulse) when the backend is reachable.
+
+### Frontend structure
+
+```
+frontend/
+├── src/
+│   ├── services/           # Axios API layer  (api.js)
+│   ├── context/            # Toast notifications
+│   ├── hooks/              # useUpload · useAnalysis · useToast
+│   ├── layouts/            # MainLayout (Navbar + Footer + Outlet)
+│   ├── components/
+│   │   ├── ui/             # Button · Card · Badge · Spinner · ProgressBar · EmptyState · ErrorBoundary
+│   │   ├── layout/         # Navbar · Footer
+│   │   ├── charts/         # QualityGauge · MissingValuesChart · OutlierChart
+│   │   ├── dashboard/      # OverviewCards · ProfilesTable · MissingSummary · CleaningLog · ReportActions
+│   │   └── upload/         # DropZone
+│   ├── pages/
+│   │   ├── LandingPage.jsx
+│   │   ├── UploadPage.jsx
+│   │   ├── DashboardPage.jsx
+│   │   └── NotFoundPage.jsx
+│   └── App.jsx             # BrowserRouter + routes
+├── .env.example
+├── vite.config.js
+└── tailwind.config.js
+```
+
+### Build for production
+
+```bash
+cd frontend
+npm run build          # outputs to frontend/dist/
+npm run preview        # preview the production build locally
+```
+
+### Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://127.0.0.1:8000` | FastAPI backend base URL |
+
+---
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
