@@ -7,3 +7,6 @@ jinja2
 weasyprint
 pyyaml
 scipy
+fastapi
+uvicorn[standard]
+python-multipart

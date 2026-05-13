@@ -17,10 +17,18 @@ ignore = [
     # ── Genuinely necessary ignores ──────────────────────────────────────────
     #
     # E402: module-level import not at top of file.
-    # src/main.py inserts src/ into sys.path before importing local modules so
-    # the pipeline can be invoked from any working directory (not just from
-    # inside src/).  This is a deliberate load-order requirement, not sloppiness.
+    # src/main.py and src/main_api.py insert src/ into sys.path before
+    # importing local modules so the pipeline can be invoked from any working
+    # directory.  This is a deliberate load-order requirement, not sloppiness.
     "E402",
+
+    # B008: function call in default argument.
+    # FastAPI's dependency injection system is built around calling Depends(),
+    # File(), Body(), etc. in function default arguments.  This is the
+    # canonical FastAPI pattern — explicitly documented and required for DI to
+    # work.  Suppressed globally so every route file does not need its own
+    # per-file override.
+    "B008",
 ]
 
 [lint.per-file-ignores]
