@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  quality:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      # ── Stage 1: Syntax ────────────────────────────────────────────
+      - name: Syntax check (py_compile)
+        run: |
+          find src tests -name "*.py" | xargs python3 -m py_compile
+          echo "Syntax OK"
+
+      # ── Stage 2: Warnings-as-errors import check ───────────────────
+      - name: No FutureWarning on import
+        run: |
+          cd src
+          python3 -W error::FutureWarning -W error::DeprecationWarning -c "
+          import loader, validator, cleaner, anomaly_detector
+          import drift_detector, report_generator
+          print('All modules import cleanly')
+          "
+
+      # ── Stage 3: Type checking ─────────────────────────────────────
+      - name: Type check (mypy)
+        run: mypy src/
+
+      # ── Stage 4: Linting ──────────────────────────────────────────
+      - name: Lint (ruff)
+        run: ruff check src/ tests/
+
+      # ── Stage 5: Test suite ────────────────────────────────────────
+      - name: Run test suite (pytest)
+        run: pytest -q
+        env:
+          # Ensure matplotlib uses the headless Agg backend in CI
+          MPLBACKEND: Agg

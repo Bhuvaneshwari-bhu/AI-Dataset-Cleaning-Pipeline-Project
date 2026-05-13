@@ -1,0 +1,54 @@
+# schema.yaml
+# External schema configuration for the AI Dataset Cleaning & Validation Pipeline.
+#
+# Keeping the schema in YAML instead of hard-coding it in Python has two benefits:
+#   1. Non-engineers (data analysts, QA) can update validation rules without
+#      touching Python source code.
+#   2. Schema changes appear as plain text in version-control diffs, making
+#      rule changes easy to review in pull requests.
+#
+# Supported fields per column:
+#   dtype          : expected pandas dtype string (e.g. float64, object, int64)
+#   nullable       : true (NaN allowed) or false (NaN is a violation); default true
+#   min            : inclusive lower bound (numeric columns only)
+#   max            : inclusive upper bound (numeric columns only)
+#   allowed_values : exhaustive list of permitted values (categorical columns)
+#   regex          : named pattern ("email", "phone", "zip_us", "date_iso")
+#                    OR a raw regex string
+
+schema:
+  id:
+    nullable: false
+
+  age:
+    dtype: float64
+    nullable: true
+    min: 0
+    max: 120
+
+  income:
+    dtype: float64
+    nullable: true
+    min: 0
+    max: 1000000
+
+  score:
+    dtype: float64
+    nullable: true
+    min: 0
+    max: 100
+
+  category:
+    nullable: true
+    allowed_values:
+      - A
+      - B
+      - C
+
+  region:
+    nullable: false
+    allowed_values:
+      - North
+      - South
+      - East
+      - West
