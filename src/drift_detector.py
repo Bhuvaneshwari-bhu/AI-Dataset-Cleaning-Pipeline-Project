@@ -23,7 +23,6 @@ not, a simpler threshold-based check on mean/std shift is used as a fallback.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -34,6 +33,7 @@ logger = get_logger("drift_detector")
 
 try:
     from scipy import stats as _scipy_stats
+
     _HAS_SCIPY = True
 except ImportError:  # pragma: no cover
     _HAS_SCIPY = False
@@ -43,6 +43,7 @@ except ImportError:  # pragma: no cover
 # ══════════════════════════════════════════════════════════════════════════════
 # Result types
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @dataclass
 class ColumnDriftResult:
@@ -61,6 +62,7 @@ class ColumnDriftResult:
                     the two samples come from different distributions.
     drifted       : True when the column is flagged as drifted.
     """
+
     mean_shift: float | None = None
     std_ratio: float | None = None
     ks_statistic: float | None = None
@@ -81,6 +83,7 @@ class DriftReport:
     drifted_columns    : names of columns flagged as drifted
     overall_drift_score: 0 = no drift detected, 100 = all columns drifted
     """
+
     baseline_rows: int
     incoming_rows: int
     column_results: dict[str, ColumnDriftResult] = field(default_factory=dict)
@@ -91,6 +94,7 @@ class DriftReport:
 # ══════════════════════════════════════════════════════════════════════════════
 # Detector
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class DriftDetector:
     """
@@ -209,7 +213,8 @@ class DriftDetector:
 
         shared_cols = sorted(set(baseline.columns) & set(incoming.columns))
         numeric_cols = [
-            c for c in shared_cols
+            c
+            for c in shared_cols
             if pd.api.types.is_numeric_dtype(baseline[c])
             and pd.api.types.is_numeric_dtype(incoming[c])
         ]

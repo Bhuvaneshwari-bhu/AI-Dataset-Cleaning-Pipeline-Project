@@ -132,8 +132,7 @@ class DataCleaner:
     def _standardize_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
         # snake_case column names keep downstream code consistent
         df.columns = (
-            df.columns
-            .str.strip()
+            df.columns.str.strip()
             .str.lower()
             .str.replace(r"[\s\-]+", "_", regex=True)
             .str.replace(r"[^\w]", "", regex=True)

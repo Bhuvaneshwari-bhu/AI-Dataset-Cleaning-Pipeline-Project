@@ -18,10 +18,10 @@ import pytest
 
 from anomaly_detector import AnomalyDetector, AnomalyReport
 
-
 # ══════════════════════════════════════════════════════════════════════════════
 # Helpers
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def _df_with_known_outlier() -> pd.DataFrame:
     """DataFrame where row 0 is a clear outlier in 'value'."""
@@ -40,6 +40,7 @@ def _clean_numeric_df() -> pd.DataFrame:
 # ══════════════════════════════════════════════════════════════════════════════
 # IQR detection
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def test_iqr_detects_known_outlier() -> None:
     df = _df_with_known_outlier()
@@ -70,6 +71,7 @@ def test_iqr_total_outliers_matches_column_sum() -> None:
 # Z-score detection
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def test_zscore_detects_known_outlier() -> None:
     df = _df_with_known_outlier()
     report = AnomalyDetector(method="zscore", threshold=3.0).detect(df)
@@ -87,6 +89,7 @@ def test_zscore_zero_std_handled_gracefully() -> None:
 # No outliers in clean data
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def test_no_outliers_in_clean_data_iqr() -> None:
     # Use a high threshold to ensure tightly clustered data passes
     df = _clean_numeric_df()
@@ -97,6 +100,7 @@ def test_no_outliers_in_clean_data_iqr() -> None:
 # ══════════════════════════════════════════════════════════════════════════════
 # remove_outliers
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def test_remove_outliers_reduces_row_count() -> None:
     df = _df_with_known_outlier()
@@ -128,16 +132,19 @@ def test_remove_outliers_no_change_for_clean_data() -> None:
 # Error handling
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def test_invalid_method_raises_value_error() -> None:
     with pytest.raises(ValueError, match="method must be one of"):
         AnomalyDetector(method="invalid")
 
 
 def test_non_numeric_columns_skipped() -> None:
-    df = pd.DataFrame({
-        "text":  ["a", "b", "c", "d"],
-        "value": [1.0, 2.0, 3.0, 1_000.0],  # 1000 is an outlier
-    })
+    df = pd.DataFrame(
+        {
+            "text": ["a", "b", "c", "d"],
+            "value": [1.0, 2.0, 3.0, 1_000.0],  # 1000 is an outlier
+        }
+    )
     report = AnomalyDetector(method="iqr").detect(df)
     # Only 'value' should be in results; 'text' is skipped
     assert "text" not in report.column_results

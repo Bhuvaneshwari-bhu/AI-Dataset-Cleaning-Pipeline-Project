@@ -15,28 +15,29 @@ Tests cover:
 
 import warnings
 
-import numpy as np
 import pandas as pd
-import pytest
 
 from cleaner import DataCleaner
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Helpers
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def _df_with_missing() -> pd.DataFrame:
-    return pd.DataFrame({
-        "age":    [25.0, float("nan"), 45.0, float("nan"), 35.0],
-        "income": [50_000.0, 60_000.0, float("nan"), 55_000.0, 70_000.0],
-        "label":  ["A", None, "B", "A", None],
-    })
+    return pd.DataFrame(
+        {
+            "age": [25.0, float("nan"), 45.0, float("nan"), 35.0],
+            "income": [50_000.0, 60_000.0, float("nan"), 55_000.0, 70_000.0],
+            "label": ["A", None, "B", "A", None],
+        }
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Fill strategies
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def test_median_fill_numeric() -> None:
     df = _df_with_missing()
@@ -79,6 +80,7 @@ def test_categorical_filled_with_mode() -> None:
 # Custom fills
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def test_custom_fill_overrides_strategy() -> None:
     df = _df_with_missing()
     clean, log = DataCleaner(custom_fills={"age": -1.0}).run(df)
@@ -90,6 +92,7 @@ def test_custom_fill_overrides_strategy() -> None:
 # ══════════════════════════════════════════════════════════════════════════════
 # Duplicate removal
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def test_duplicates_removed() -> None:
     df = pd.DataFrame({"a": [1, 2, 3, 1, 2], "b": ["x", "y", "z", "x", "y"]})
@@ -108,6 +111,7 @@ def test_duplicates_kept_when_disabled() -> None:
 # Whitespace stripping
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def test_whitespace_stripped_from_strings() -> None:
     df = pd.DataFrame({"name": [" Alice ", "  Bob", "Carol "]})
     clean, _ = DataCleaner(strip_whitespace=True).run(df)
@@ -125,6 +129,7 @@ def test_whitespace_strip_disabled() -> None:
 # Column name standardisation
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def test_column_names_snake_cased() -> None:
     df = pd.DataFrame({"First Name": [1], "Last-Name": [2], "  score  ": [3]})
     clean, log = DataCleaner().run(df)
@@ -137,6 +142,7 @@ def test_column_names_snake_cased() -> None:
 # ══════════════════════════════════════════════════════════════════════════════
 # Return type and change log
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def test_run_returns_df_and_log() -> None:
     df = _df_with_missing()
@@ -165,6 +171,7 @@ def test_empty_log_when_no_issues() -> None:
 # Immutability: input DataFrame must not be mutated
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def test_input_df_not_mutated() -> None:
     df = _df_with_missing()
     original_nulls = df.isnull().sum().sum()
@@ -176,6 +183,7 @@ def test_input_df_not_mutated() -> None:
 # ══════════════════════════════════════════════════════════════════════════════
 # No FutureWarning or SettingWithCopyWarning
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def test_no_future_warnings_raised() -> None:
     df = _df_with_missing()

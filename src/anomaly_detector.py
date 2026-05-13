@@ -23,6 +23,7 @@ logger = get_logger("anomaly_detector")
 @dataclass
 class AnomalyReport:
     """Holds the findings for every numeric column."""
+
     method: str
     column_results: dict[str, dict[str, Any]] = field(default_factory=dict)
     total_outliers: int = 0
@@ -78,17 +79,16 @@ class AnomalyDetector:
         """Scan all numeric columns and return an AnomalyReport."""
         logger.info(
             "Running '%s' outlier detection (threshold=%.2f) on %d rows",
-            self.method, self.threshold, len(df),
+            self.method,
+            self.threshold,
+            len(df),
         )
         report = AnomalyReport(method=self.method)
         numeric_cols = df.select_dtypes(include=[np.number]).columns
 
         for col in numeric_cols:
             series = df[col].dropna()
-            mask = (
-                self._iqr_mask(series) if self.method == "iqr"
-                else self._zscore_mask(series)
-            )
+            mask = self._iqr_mask(series) if self.method == "iqr" else self._zscore_mask(series)
             outlier_indices = series[mask].index.tolist()
             count = len(outlier_indices)
             report.column_results[col] = {
@@ -100,7 +100,8 @@ class AnomalyDetector:
 
         logger.info(
             "Found %d total outlier(s) across %d numeric column(s)",
-            report.total_outliers, len(numeric_cols),
+            report.total_outliers,
+            len(numeric_cols),
         )
         return report
 
@@ -115,6 +116,7 @@ class AnomalyDetector:
         df_clean = df.drop(index=list(all_outlier_indices)).reset_index(drop=True)
         logger.info(
             "Removed %d outlier row(s) — %d rows remaining",
-            before - len(df_clean), len(df_clean),
+            before - len(df_clean),
+            len(df_clean),
         )
         return df_clean

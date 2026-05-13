@@ -9,10 +9,23 @@ Pipeline stages (in order):
   4. Detect   – flag / remove statistical outliers
   5. Export   – save clean CSV to output/
   6. Report   – write HTML (and optionally PDF) report to reports/
+
+Usage
+-----
+    # No-arg form — uses built-in defaults and auto-generates sample data if needed:
+    python3 main.py
+
+    # Explicit input + schema:
+    python3 main.py --input data.csv --schema config/schema.yaml
+
+    # Override output locations and detection method:
+    python3 main.py --input raw.csv --output-dir results/ --report-dir html/ --anomaly-method zscore
 """
 
+import argparse
 import os
 import sys
+from pathlib import Path
 
 import pandas as pd
 
@@ -28,79 +41,161 @@ from validator import DataValidator, load_schema_from_yaml
 
 logger = get_logger("main")
 
-# ── Configuration ────────────────────────────────────────────────────────────
-# Adjust these paths to match your dataset.
+# ── Defaults ──────────────────────────────────────────────────────────────────
+# Centralised here so _build_parser() and run_pipeline() always agree on them.
 
-DATA_FILE = "data/sample_dataset.csv"
-OUTPUT_FILE = "output/clean_dataset.csv"
-REPORTS_DIR = "reports"
-INVALID_ROWS_FILE = "output/invalid_rows.csv"
-
-# Optional: load schema rules from YAML instead of hard-coding them here.
-# Set to None to skip schema validation, or provide a path like "config/schema.yaml".
-SCHEMA_FILE: str | None = "config/schema.yaml"
+DEFAULT_INPUT = "data/sample_dataset.csv"
+DEFAULT_SCHEMA = "config/schema.yaml"
+DEFAULT_OUTPUT_DIR = "output"
+DEFAULT_REPORT_DIR = "reports"
+DEFAULT_ANOMALY_METHOD = "iqr"
+DEFAULT_ANOMALY_THRESHOLD = 1.5
 
 CLEANER_CONFIG = {
-    "fill_strategy": "median",   # "median" | "mean" | "mode" | "drop"
+    "fill_strategy": "median",  # "median" | "mean" | "mode" | "drop"
     "drop_duplicate": True,
     "strip_whitespace": True,
 }
 
-ANOMALY_CONFIG = {
-    "method": "iqr",      # "iqr" | "zscore"
-    "threshold": 1.5,
-}
+
+# ── Argument parser ───────────────────────────────────────────────────────────
 
 
-# ── Pipeline ─────────────────────────────────────────────────────────────────
+def _build_parser() -> argparse.ArgumentParser:
+    """Return a configured ArgumentParser.  Isolated so it can be unit-tested."""
+    parser = argparse.ArgumentParser(
+        prog="main.py",
+        description=(
+            "AI Dataset Cleaning & Validation Pipeline — loads a CSV, validates it "
+            "against an optional schema, cleans it, detects anomalies, and produces "
+            "an HTML quality report."
+        ),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
-def run_pipeline(data_file: str = DATA_FILE) -> pd.DataFrame:
+    parser.add_argument(
+        "--input",
+        "-i",
+        metavar="FILE",
+        default=DEFAULT_INPUT,
+        help=(
+            "Path to the input CSV file. "
+            "A synthetic sample is auto-generated when the file does not exist."
+        ),
+    )
+    parser.add_argument(
+        "--schema",
+        "-s",
+        metavar="FILE",
+        default=DEFAULT_SCHEMA,
+        help=(
+            "Path to a YAML schema file that defines per-column validation rules "
+            "(dtype, nullable, min/max, allowed_values, regex). "
+            "Silently skipped when the file does not exist."
+        ),
+    )
+    parser.add_argument(
+        "--output-dir",
+        metavar="DIR",
+        default=DEFAULT_OUTPUT_DIR,
+        help=(
+            "Directory for the cleaned CSV (clean_dataset.csv) "
+            "and invalid-rows file (invalid_rows.csv)."
+        ),
+    )
+    parser.add_argument(
+        "--report-dir",
+        metavar="DIR",
+        default=DEFAULT_REPORT_DIR,
+        help="Directory for the HTML quality report (report.html) and optional PDF.",
+    )
+    parser.add_argument(
+        "--anomaly-method",
+        choices=["iqr", "zscore"],
+        default=DEFAULT_ANOMALY_METHOD,
+        help=(
+            "Outlier detection algorithm. "
+            "'iqr' (inter-quartile range) is robust for skewed distributions; "
+            "'zscore' works better when the data is near-normal."
+        ),
+    )
+
+    return parser
+
+
+# ── Pipeline ──────────────────────────────────────────────────────────────────
+
+
+def run_pipeline(
+    data_file: str = DEFAULT_INPUT,
+    *,
+    schema_file: str | None = DEFAULT_SCHEMA,
+    output_dir: str = DEFAULT_OUTPUT_DIR,
+    report_dir: str = DEFAULT_REPORT_DIR,
+    anomaly_method: str = DEFAULT_ANOMALY_METHOD,
+    anomaly_threshold: float = DEFAULT_ANOMALY_THRESHOLD,
+) -> pd.DataFrame:
     """
     Execute the full pipeline and return the cleaned DataFrame.
 
+    All parameters are keyword-only (except *data_file*) so callers can override
+    only the options they care about while defaults handle the rest.
+
     Parameters
     ----------
-    data_file : path to the raw CSV (default DATA_FILE)
+    data_file        : path to the raw input CSV
+    schema_file      : YAML schema path; None or a non-existent path skips schema validation
+    output_dir       : directory for clean_dataset.csv and invalid_rows.csv
+    report_dir       : directory for report.html (and optional report.pdf)
+    anomaly_method   : "iqr" or "zscore"
+    anomaly_threshold: IQR multiplier (iqr mode) or std-dev cutoff (zscore mode)
     """
+    out_path = Path(output_dir)
+    output_file = out_path / "clean_dataset.csv"
+    invalid_rows_file = out_path / "invalid_rows.csv"
+
     logger.info("=" * 60)
     logger.info("AI Dataset Cleaning & Validation Pipeline")
     logger.info("=" * 60)
 
-    # ── Stage 1: Load ────────────────────────────────────────────────
+    # ── Stage 1: Load ──────────────────────────────────────────────────
     df_raw = load_csv(data_file)
 
     info = get_basic_info(df_raw)
     logger.info("Columns: %s", info["column_names"])
     logger.info("Memory: %.1f KB", info["memory_usage_kb"])
-
     logger.info("First 5 rows:\n%s", df_raw.head().to_string())
 
-    # ── Stage 2: Validate ────────────────────────────────────────────
+    # ── Stage 2: Validate ──────────────────────────────────────────────
     schema: dict | None = None
-    if SCHEMA_FILE and os.path.exists(SCHEMA_FILE):
+    if schema_file and os.path.exists(schema_file):
         try:
-            schema = load_schema_from_yaml(SCHEMA_FILE)
+            schema = load_schema_from_yaml(schema_file)
         except Exception as exc:
-            logger.warning("Could not load schema from '%s': %s — running without schema.", SCHEMA_FILE, exc)
+            logger.warning(
+                "Could not load schema from '%s': %s — running without schema.",
+                schema_file,
+                exc,
+            )
 
     validator = DataValidator(schema=schema)
-    validation_result = validator.run(df_raw, export_invalid_to=INVALID_ROWS_FILE)
+    validation_result = validator.run(df_raw, export_invalid_to=str(invalid_rows_file))
 
-    # ── Stage 3: Clean ───────────────────────────────────────────────
+    # ── Stage 3: Clean ─────────────────────────────────────────────────
     cleaner = DataCleaner(**CLEANER_CONFIG)
     df_clean, clean_log = cleaner.run(df_raw)
 
-    # ── Stage 4: Anomaly Detection ───────────────────────────────────
-    detector = AnomalyDetector(**ANOMALY_CONFIG)
+    # ── Stage 4: Anomaly Detection ─────────────────────────────────────
+    detector = AnomalyDetector(method=anomaly_method, threshold=anomaly_threshold)
     anomaly_report = detector.detect(df_clean)
 
-    # ── Stage 5: Export ──────────────────────────────────────────────
-    os.makedirs(os.path.dirname(OUTPUT_FILE) or ".", exist_ok=True)
-    df_clean.to_csv(OUTPUT_FILE, index=False)
-    logger.info("Clean dataset saved to '%s'", OUTPUT_FILE)
+    # ── Stage 5: Export ────────────────────────────────────────────────
+    out_path.mkdir(parents=True, exist_ok=True)
+    df_clean.to_csv(output_file, index=False)
+    logger.info("Clean dataset saved to '%s'", output_file)
 
-    # ── Stage 6: Report ──────────────────────────────────────────────
-    reporter = ReportGenerator(output_dir=REPORTS_DIR)
+    # ── Stage 6: Report ────────────────────────────────────────────────
+    reporter = ReportGenerator(output_dir=report_dir)
     reporter.generate(
         df_raw=df_raw,
         df_clean=df_clean,
@@ -113,7 +208,8 @@ def run_pipeline(data_file: str = DATA_FILE) -> pd.DataFrame:
     return df_clean
 
 
-# ── Sample dataset generator ─────────────────────────────────────────────────
+# ── Sample dataset generator ──────────────────────────────────────────────────
+
 
 def _create_sample_csv(path: str) -> None:
     """Generate a small synthetic dataset so the pipeline runs out of the box."""
@@ -122,14 +218,16 @@ def _create_sample_csv(path: str) -> None:
     rng = np.random.default_rng(42)
     n = 200
 
-    df = pd.DataFrame({
-        "id":       range(1, n + 1),
-        "age":      rng.integers(18, 75, size=n).astype(float),
-        "income":   rng.normal(50_000, 15_000, size=n).round(2),
-        "score":    rng.uniform(0, 100, size=n).round(1),
-        "category": rng.choice(np.array(["A", "B", "C", None], dtype=object), size=n),
-        "region":   rng.choice(["North", "South", "East", "West"], size=n),
-    })
+    df = pd.DataFrame(
+        {
+            "id": range(1, n + 1),
+            "age": rng.integers(18, 75, size=n).astype(float),
+            "income": rng.normal(50_000, 15_000, size=n).round(2),
+            "score": rng.uniform(0, 100, size=n).round(1),
+            "category": rng.choice(np.array(["A", "B", "C", None], dtype=object), size=n),
+            "region": rng.choice(["North", "South", "East", "West"], size=n),
+        }
+    )
 
     for col in ["age", "income", "score"]:
         idx = rng.choice(df.index, size=16, replace=False)
@@ -147,8 +245,16 @@ def _create_sample_csv(path: str) -> None:
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    if not os.path.exists(DATA_FILE):
-        logger.info("'%s' not found — generating sample dataset...", DATA_FILE)
-        _create_sample_csv(DATA_FILE)
+    args = _build_parser().parse_args()
 
-    run_pipeline(DATA_FILE)
+    if not os.path.exists(args.input):
+        logger.info("'%s' not found — generating sample dataset...", args.input)
+        _create_sample_csv(args.input)
+
+    run_pipeline(
+        data_file=args.input,
+        schema_file=args.schema,
+        output_dir=args.output_dir,
+        report_dir=args.report_dir,
+        anomaly_method=args.anomaly_method,
+    )

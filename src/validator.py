@@ -47,13 +47,10 @@ logger = get_logger("validator")
 _BUILT_IN_PATTERNS: dict[str, str] = {
     # RFC-5321-ish email: local@domain.tld (simplified, catches 99 % of typos)
     "email": r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$",
-
     # Phone: +1-800-555-0100, (800) 555-0100, 800.555.0100
     "phone": r"^(\+?\d{1,3}[\s\-.])?(\(?\d{3}\)?[\s\-.])\d{3}[\s\-\.]\d{4}$",
-
     # US ZIP: 12345 or 12345-6789
     "zip_us": r"^\d{5}(-\d{4})?$",
-
     # ISO 8601 date: 2024-01-31
     "date_iso": r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$",
 }
@@ -62,6 +59,7 @@ _BUILT_IN_PATTERNS: dict[str, str] = {
 # ══════════════════════════════════════════════════════════════════════════════
 # YAML schema loader
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def load_schema_from_yaml(path: str | Path) -> dict[str, Any]:
     """
@@ -93,8 +91,7 @@ def load_schema_from_yaml(path: str | Path) -> dict[str, Any]:
         import yaml
     except ImportError as exc:
         raise ImportError(
-            "pyyaml is required for YAML schema loading. "
-            "Install it with: pip install pyyaml"
+            "pyyaml is required for YAML schema loading. Install it with: pip install pyyaml"
         ) from exc
 
     config_path = Path(path)
@@ -105,9 +102,7 @@ def load_schema_from_yaml(path: str | Path) -> dict[str, Any]:
         raw: dict[str, Any] = yaml.safe_load(fh)
 
     if "schema" not in raw:
-        raise KeyError(
-            f"YAML file '{config_path}' must have a top-level 'schema' key."
-        )
+        raise KeyError(f"YAML file '{config_path}' must have a top-level 'schema' key.")
 
     logger.info("Loaded schema from '%s' (%d column rules)", config_path, len(raw["schema"]))
     return raw["schema"]
@@ -127,6 +122,7 @@ def load_schema_from_yaml(path: str | Path) -> dict[str, Any]:
 #   • eliminates ad-hoc if/else checks scattered through preprocessing
 #   • produces structured violation reports instead of silent data corruption
 
+
 @dataclass
 class ColumnSchema:
     """
@@ -142,6 +138,7 @@ class ColumnSchema:
     allowed_values : exhaustive set of permitted values (categorical columns)
     regex          : named key ("email", "phone", …) or raw regex pattern string
     """
+
     dtype: str | None = None
     nullable: bool = True
     min_val: float | None = None
@@ -190,9 +187,11 @@ def _parse_schema(raw: dict[str, Any]) -> dict[str, ColumnSchema]:
 # Running profiling inside the validator means you get both the "is this valid?"
 # answer AND the "what does it look like?" answer in one pass.
 
+
 @dataclass
 class ColumnProfile:
     """Descriptive statistics for one column."""
+
     dtype: str
     null_count: int
     null_pct: float
@@ -208,6 +207,7 @@ class ColumnProfile:
 # ══════════════════════════════════════════════════════════════════════════════
 # Validation result
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @dataclass
 class ValidationResult:
@@ -228,6 +228,7 @@ class ValidationResult:
     invalid_row_indices : set of row indices that failed at least one check
     warnings            : non-fatal advisory messages
     """
+
     passed: bool = True
     missing_summary: dict[str, Any] = field(default_factory=dict)
     duplicate_count: int = 0
@@ -244,6 +245,7 @@ class ValidationResult:
 # ══════════════════════════════════════════════════════════════════════════════
 # Validator
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class DataValidator:
     """
@@ -291,12 +293,12 @@ class DataValidator:
     # per-column penalties (one bad column is as bad as ten bad values in it,
     # because the column is untrustworthy either way).
 
-    _SCORE_MISSING_PER_PCT: float = 0.30    # 30 % missing overall → −9 pts
+    _SCORE_MISSING_PER_PCT: float = 0.30  # 30 % missing overall → −9 pts
     _SCORE_DUPLICATE_PER_PCT: float = 0.20  # 10 % duplicate rows  → −2 pts
-    _SCORE_TYPE_ISSUE: float = 5.0          # per dtype mismatch    → −5 pts each
-    _SCORE_FORMAT_VIOLATION: float = 5.0    # per column with bad regex values
-    _SCORE_SCHEMA_VIOLATION: float = 4.0    # per column with schema violations
-    _SCORE_REQUIRED_MISSING: float = 5.0    # per missing required column
+    _SCORE_TYPE_ISSUE: float = 5.0  # per dtype mismatch    → −5 pts each
+    _SCORE_FORMAT_VIOLATION: float = 5.0  # per column with bad regex values
+    _SCORE_SCHEMA_VIOLATION: float = 4.0  # per column with schema violations
+    _SCORE_REQUIRED_MISSING: float = 5.0  # per missing required column
 
     def __init__(
         self,
@@ -407,9 +409,7 @@ class DataValidator:
             if rule.dtype is not None:
                 actual = str(series.dtype)
                 if actual != rule.dtype:
-                    type_issues.append(
-                        f"'{col}': expected dtype '{rule.dtype}', got '{actual}'."
-                    )
+                    type_issues.append(f"'{col}': expected dtype '{rule.dtype}', got '{actual}'.")
 
             # ── nullable check ───────────────────────────────────────────────
             # "nullable: False" means the column must never contain NaN.
@@ -419,9 +419,7 @@ class DataValidator:
                 if null_mask.any():
                     bad_idx = series[null_mask].index.tolist()
                     invalid_indices.update(bad_idx)
-                    col_violations.append(
-                        f"Non-nullable column has {int(null_mask.sum())} NaN(s)."
-                    )
+                    col_violations.append(f"Non-nullable column has {int(null_mask.sum())} NaN(s).")
 
             # ── numeric range check ──────────────────────────────────────────
             if rule.min_val is not None or rule.max_val is not None:
@@ -446,7 +444,9 @@ class DataValidator:
             if rule.allowed_values is not None:
                 allowed = set(rule.allowed_values)
                 non_null = series.dropna()
-                bad_mask = non_null.apply(lambda v: v not in allowed)
+                # isin() is vectorised and avoids a closure over 'allowed' inside
+                # a loop body, which would trigger B023 (and is slower than isin).
+                bad_mask = ~non_null.isin(allowed)
                 bad_idx = non_null[bad_mask].index.tolist()
                 if bad_idx:
                     invalid_indices.update(bad_idx)
@@ -475,9 +475,7 @@ class DataValidator:
         """
         return _BUILT_IN_PATTERNS.get(regex_key, regex_key)
 
-    def _check_regex(
-        self, df: pd.DataFrame
-    ) -> tuple[dict[str, Any], set[Any]]:
+    def _check_regex(self, df: pd.DataFrame) -> tuple[dict[str, Any], set[Any]]:
         """
         For every schema column that declares a regex, test each non-null value.
 
@@ -498,9 +496,7 @@ class DataValidator:
             try:
                 compiled = re.compile(pattern)
             except re.error as exc:
-                raise ValueError(
-                    f"Invalid regex for column '{col}': {pattern!r} — {exc}"
-                ) from exc
+                raise ValueError(f"Invalid regex for column '{col}': {pattern!r} — {exc}") from exc
 
             # Test only non-null string values; NaN handling is covered by nullable
             non_null = df[col].dropna().astype(str)
@@ -626,9 +622,7 @@ class DataValidator:
         result.profiles = self._profile_columns(df)
 
         # ── Schema validation ────────────────────────────────────────────────
-        type_issues, out_of_range, schema_violations, schema_bad_idx = (
-            self._check_schema(df)
-        )
+        type_issues, out_of_range, schema_violations, schema_bad_idx = self._check_schema(df)
         result.type_issues = type_issues
         result.out_of_range = out_of_range
         result.schema_violations = schema_violations
@@ -640,8 +634,12 @@ class DataValidator:
         result.invalid_row_indices.update(format_bad_idx)
 
         # ── Determine overall pass/fail ──────────────────────────────────────
-        if (result.type_issues or result.out_of_range
-                or result.schema_violations or result.format_violations):
+        if (
+            result.type_issues
+            or result.out_of_range
+            or result.schema_violations
+            or result.format_violations
+        ):
             result.passed = False
 
         # ── Quality score ────────────────────────────────────────────────────

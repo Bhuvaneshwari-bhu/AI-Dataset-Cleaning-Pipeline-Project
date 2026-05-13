@@ -1,0 +1,39 @@
+# ruff.toml — linting and formatting configuration
+# Docs: https://docs.astral.sh/ruff/configuration/
+
+line-length = 100
+target-version = "py311"
+
+[lint]
+# Rule sets enabled:
+#   E  – pycodestyle errors (style correctness)
+#   F  – pyflakes (unused imports, undefined names, …)
+#   I  – isort (import ordering)
+#   B  – flake8-bugbear (likely bugs and design problems)
+#   UP – pyupgrade (modernise syntax for the target Python version)
+select = ["E", "F", "I", "B", "UP"]
+
+ignore = [
+    # ── Genuinely necessary ignores ──────────────────────────────────────────
+    #
+    # E402: module-level import not at top of file.
+    # src/main.py inserts src/ into sys.path before importing local modules so
+    # the pipeline can be invoked from any working directory (not just from
+    # inside src/).  This is a deliberate load-order requirement, not sloppiness.
+    "E402",
+]
+
+[lint.per-file-ignores]
+# report_generator.py builds HTML via multi-line f-string templates.  The
+# inline CSS rules, HTML attribute strings, and conditional style expressions
+# are intentionally long — splitting them would harm readability without any
+# practical benefit, and ruff format cannot automatically wrap string literals.
+# E501 is suppressed here and nowhere else.
+"src/report_generator.py" = ["E501"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+# Respect trailing commas added for readability (do not collapse to one line)
+skip-magic-trailing-comma = false
+line-ending = "auto"

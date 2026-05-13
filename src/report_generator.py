@@ -41,6 +41,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import matplotlib
+
 matplotlib.use("Agg")  # headless backend – no display needed
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -59,6 +60,7 @@ logger = get_logger("report_generator")
 # ══════════════════════════════════════════════════════════════════════════════
 # Chart helpers
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def _save_missing_bar(missing_summary: dict[str, Any], output_dir: Path) -> str | None:
     """Bar chart of missing-value percentages; returns the saved file path."""
@@ -104,6 +106,7 @@ def _save_distribution_plots(df: pd.DataFrame, output_dir: Path) -> list[str]:
 # ══════════════════════════════════════════════════════════════════════════════
 # Report generator
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class ReportGenerator:
     """
@@ -172,6 +175,7 @@ class ReportGenerator:
         # Optional PDF export
         try:
             from weasyprint import HTML as WeasyprintHTML
+
             pdf_path = self.output_dir / "report.pdf"
             WeasyprintHTML(filename=str(report_path)).write_pdf(str(pdf_path))
             logger.info("PDF report saved to '%s'", pdf_path)
@@ -254,10 +258,13 @@ class ReportGenerator:
         </div>"""
 
         # ── Section 2: Validation ────────────────────────────────────────────
-        missing_rows = "".join(
-            f"<tr><td>{col}</td><td>{v['count']}</td><td>{v['pct']}%</td></tr>"
-            for col, v in validation_result.missing_summary.items()
-        ) or "<tr><td colspan=3 style='color:#2e7d32'>No missing values.</td></tr>"
+        missing_rows = (
+            "".join(
+                f"<tr><td>{col}</td><td>{v['count']}</td><td>{v['pct']}%</td></tr>"
+                for col, v in validation_result.missing_summary.items()
+            )
+            or "<tr><td colspan=3 style='color:#2e7d32'>No missing values.</td></tr>"
+        )
 
         type_section = ""
         if validation_result.type_issues:
@@ -266,7 +273,8 @@ class ReportGenerator:
 
         missing_chart_tag = (
             f'<img src="{missing_chart}" style="max-width:600px;margin-top:12px">'
-            if missing_chart else ""
+            if missing_chart
+            else ""
         )
 
         # ── Section 3: Column profiles ───────────────────────────────────────
@@ -274,9 +282,12 @@ class ReportGenerator:
         for col, p in validation_result.profiles.items():
             num_stats = (
                 f"{p.min_val:.3g} / {p.max_val:.3g} / {p.mean:.3g} / {p.median:.3g}"
-                if p.mean is not None else "—"
+                if p.mean is not None
+                else "—"
             )
-            null_colour = "#c62828" if p.null_pct > 10 else ("#e65100" if p.null_pct > 0 else "#2e7d32")
+            null_colour = (
+                "#c62828" if p.null_pct > 10 else ("#e65100" if p.null_pct > 0 else "#2e7d32")
+            )
             profile_rows += (
                 f"<tr><td>{col}</td><td>{p.dtype}</td>"
                 f"<td style='color:{null_colour}'>{p.null_count} ({p.null_pct}%)</td>"
@@ -297,7 +308,9 @@ class ReportGenerator:
               {rows}
             </table>"""
         else:
-            schema_viol_html = f"<h2>4. Schema Violations {badge(True)}</h2><p>No schema violations detected.</p>"
+            schema_viol_html = (
+                f"<h2>4. Schema Violations {badge(True)}</h2><p>No schema violations detected.</p>"
+            )
 
         # ── Section 5: Format violations ────────────────────────────────────
         format_viol_html = ""
@@ -316,7 +329,9 @@ class ReportGenerator:
               {rows}
             </table>"""
         else:
-            format_viol_html = f"<h2>5. Format Violations {badge(True)}</h2><p>All format checks passed.</p>"
+            format_viol_html = (
+                f"<h2>5. Format Violations {badge(True)}</h2><p>All format checks passed.</p>"
+            )
 
         # ── Section 6: Range violations ──────────────────────────────────────
         range_viol_html = ""
@@ -336,11 +351,14 @@ class ReportGenerator:
             </table>"""
 
         # ── Section 7: Outliers ──────────────────────────────────────────────
-        outlier_rows = "".join(
-            f"<tr><td>{col}</td><td>{v['count']}</td><td>{v['pct']}%</td></tr>"
-            for col, v in anomaly_report.column_results.items()
-            if v["count"] > 0
-        ) or "<tr><td colspan=3 style='color:#2e7d32'>No outliers detected.</td></tr>"
+        outlier_rows = (
+            "".join(
+                f"<tr><td>{col}</td><td>{v['count']}</td><td>{v['pct']}%</td></tr>"
+                for col, v in anomaly_report.column_results.items()
+                if v["count"] > 0
+            )
+            or "<tr><td colspan=3 style='color:#2e7d32'>No outliers detected.</td></tr>"
+        )
 
         # ── Section 8: Drift ─────────────────────────────────────────────────
         drift_html = ""
@@ -380,10 +398,10 @@ class ReportGenerator:
         clean_log_items = "".join(f"<li>{s}</li>" for s in clean_log) or "<li>No changes.</li>"
 
         # ── Distribution charts ───────────────────────────────────────────────
-        dist_chart_tags = "".join(
-            f'<img src="{p}" style="max-width:400px;margin:8px">'
-            for p in dist_charts
-        ) or "<p>No numeric columns for distribution plots.</p>"
+        dist_chart_tags = (
+            "".join(f'<img src="{p}" style="max-width:400px;margin:8px">' for p in dist_charts)
+            or "<p>No numeric columns for distribution plots.</p>"
+        )
 
         # ── Assemble ─────────────────────────────────────────────────────────
         return f"""<!DOCTYPE html>
@@ -446,10 +464,10 @@ class ReportGenerator:
 
   {range_viol_html}
 
-  <h2>{'7' if range_viol_html else '6'}. Cleaning Log</h2>
+  <h2>{"7" if range_viol_html else "6"}. Cleaning Log</h2>
   <ul>{clean_log_items}</ul>
 
-  <h2>{'8' if range_viol_html else '7'}. Anomaly Detection ({anomaly_report.method.upper()})</h2>
+  <h2>{"8" if range_viol_html else "7"}. Anomaly Detection ({anomaly_report.method.upper()})</h2>
   <table>
     <tr><th>Column</th><th>Outlier Count</th><th>Outlier %</th></tr>
     {outlier_rows}
@@ -457,7 +475,7 @@ class ReportGenerator:
 
   {drift_html}
 
-  <h2>{'10' if drift_html else '9' if range_viol_html else '8'}. Distributions (Clean Data)</h2>
+  <h2>{"10" if drift_html else "9" if range_viol_html else "8"}. Distributions (Clean Data)</h2>
   <div class="charts">{dist_chart_tags}</div>
 </body>
 </html>"""

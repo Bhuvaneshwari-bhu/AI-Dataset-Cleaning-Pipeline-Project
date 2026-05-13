@@ -24,18 +24,21 @@ if str(_src) not in sys.path:
 
 # ── Shared DataFrames ────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def clean_df() -> pd.DataFrame:
     """100-row synthetic DataFrame with no quality issues."""
     rng = np.random.default_rng(42)
-    return pd.DataFrame({
-        "id":     range(1, 101),
-        "age":    rng.integers(18, 75, 100).astype(float),
-        "income": rng.normal(50_000, 10_000, 100).round(2),
-        "score":  rng.uniform(0, 100, 100).round(1),
-        "email":  [f"user{i}@example.com" for i in range(100)],
-        "status": rng.choice(["active", "inactive"], 100).tolist(),
-    })
+    return pd.DataFrame(
+        {
+            "id": range(1, 101),
+            "age": rng.integers(18, 75, 100).astype(float),
+            "income": rng.normal(50_000, 10_000, 100).round(2),
+            "score": rng.uniform(0, 100, 100).round(1),
+            "email": [f"user{i}@example.com" for i in range(100)],
+            "status": rng.choice(["active", "inactive"], 100).tolist(),
+        }
+    )
 
 
 @pytest.fixture
@@ -52,7 +55,7 @@ def dirty_df(clean_df: pd.DataFrame) -> pd.DataFrame:
     df = clean_df.copy()
     df.loc[[0, 1, 2], "age"] = float("nan")
     df.loc[[10, 11], "income"] = float("nan")
-    df.loc[0, "income"] = 999_999.0          # outlier + out-of-range
+    df.loc[0, "income"] = 999_999.0  # outlier + out-of-range
     df.loc[[4, 5], "email"] = "not-an-email"
     df.loc[6, "status"] = "DELETED"
     df = pd.concat([df, df.iloc[:3]], ignore_index=True)
