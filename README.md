@@ -594,6 +594,22 @@ pytest --cov=src --cov-report=term-missing
 5. Open a pull request — CI runs automatically on push
 
 ---
+## Pipeline Output
+
+![Pipeline](assets/pipeline_logs1.png)
+![Pipeline](assets/pipeline_logs2.png)
+
+## Test Coverage
+
+![Coverage](assets/coverage_report.png)
+
+## HTML Report
+
+![Report](assets/report_dashboard1.png)
+![Report](assets/report_dashboard2.png)
+![Report](assets/report_dashboard3.png)
+![Report](assets/report_dashboard4.png)
+---
 
 ## License
 
