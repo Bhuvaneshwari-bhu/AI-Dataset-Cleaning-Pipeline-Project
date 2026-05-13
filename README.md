@@ -1,4 +1,19 @@
 # AI Dataset Cleaning & Validation Pipeline
+A full-stack data quality system that uploads, validates, cleans, detects anomalies, and generates automated reports for CSV datasets.
+
+---
+
+## 🌐 Live Links
+
+Frontend (Vercel):
+https://ai-dataset-cleaning-pipeline-projec.vercel.app
+
+Backend API (Render):
+https://bhu-ai-dataset-cleaning-pipeline.onrender.com
+
+API Docs (Swagger):
+https://bhu-ai-dataset-cleaning-pipeline.onrender.com/docs
+---
 
 [![CI](https://github.com/your-org/ai-dataset-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/ai-dataset-pipeline/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
